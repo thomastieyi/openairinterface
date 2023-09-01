@@ -107,7 +107,7 @@ static void ue_context_modification_response_direct(const f1ap_ue_context_modif_
   AssertFatal(resp->srbs_failed_to_be_setup_length == 0 && resp->srbs_failed_to_be_setup == NULL, "not implemented yet\n");
 
   DevAssert(resp->rrc_container == NULL && resp->rrc_container_length == 0);
-
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 6.X (GNB ITTI TASK_RRC_GNB IN_QUEUE F1AP_UE_CONTEXT_MODIFICATION_RESP)
   itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
@@ -175,6 +175,7 @@ static void initial_ul_rrc_message_transfer_direct(module_id_t module_id, const 
 void mac_rrc_ul_direct_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
   mac_rrc->ue_context_setup_response = ue_context_setup_response_direct;
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 6 (GNB DU TELL CU MODIFY COMPLETE FUNC PTR POINT HERE)
   mac_rrc->ue_context_modification_response = ue_context_modification_response_direct;
   mac_rrc->ue_context_modification_required = ue_context_modification_required_direct;
   mac_rrc->ue_context_release_request = ue_context_release_request_direct;

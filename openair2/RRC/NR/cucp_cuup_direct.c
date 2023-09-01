@@ -159,7 +159,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
 
   return ret;
 }
-
+// Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3 (GNB RB CONTEXT SETUP)
 static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const req, instance_t instance)
 {
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], req->gNB_cu_cp_ue_id);
@@ -183,6 +183,7 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   // GTP tunnel for UL
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.1 (GET NR_DRB_ToAddModList_t ACCORDING TO UE CONTEXT)
   NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(UE);
   int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, DRB_configList, rrc->e1_inst);
   if (ret < 0) AssertFatal(false, "Unable to configure DRB or to create GTP Tunnel\n");
@@ -202,6 +203,7 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   // actually, we should receive the corresponding context setup response
   // message at the RRC and always react to this one. So in the following, we
   // just call the corresponding message handler
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.2 (F1AP SEND MODIFY FROM CU TO DU)
   prepare_and_send_ue_context_modification_f1(ue_context_p, &resp);
 }
 
@@ -215,6 +217,7 @@ static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const r
 }
 
 void cucp_cuup_message_transfer_direct_init(gNB_RRC_INST *rrc) {
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.X (PTR POINT THIS FUNC)
   rrc->cucp_cuup.bearer_context_setup = cucp_cuup_bearer_context_setup_direct;
   rrc->cucp_cuup.bearer_context_mod = cucp_cuup_bearer_context_mod_direct;
 }

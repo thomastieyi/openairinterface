@@ -727,6 +727,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
 void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t instance)
 //------------------------------------------------------------------------------
 {
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2 (ITTI MSG HANDLER)
   protocol_ctxt_t                 ctxt={0};
 
   ngap_pdusession_setup_req_t* msg=&NGAP_PDUSESSION_SETUP_REQ(msg_p);
@@ -748,6 +749,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
 
   UE->rrc_ue_id = msg->gNB_ue_ngap_id;
   UE->amf_ue_ngap_id = msg->amf_ue_ngap_id;
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.1 (ITTI MSG E1AP BEARER SETUP REQ)
   e1ap_bearer_setup_req_t bearer_req = {0};
 
   for (int i = 0; i < msg->nb_pdusessions_tosetup; i++) {
@@ -758,6 +760,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     session->pdu_session_type = msg->pdusession_setup_params[i].pdu_session_type;
     session->nas_pdu = msg->pdusession_setup_params[i].nas_pdu;
     session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.2 (decodePDUSessionResourceSetup)
     decodePDUSessionResourceSetup(session);
     bearer_req.gNB_cu_cp_ue_id = msg->gNB_ue_ngap_id;
     bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
@@ -816,6 +819,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   }
   int xid = rrc_gNB_get_next_transaction_identifier(instance);
   UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.3 (F1 AP CONTEXT SETUP PTR)
   rrc->cucp_cuup.bearer_context_setup(&bearer_req, instance);
   return;
 }

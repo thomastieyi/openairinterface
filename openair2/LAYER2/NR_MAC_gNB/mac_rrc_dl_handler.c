@@ -165,7 +165,15 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   free(resp.du_to_cu_rrc_information->cellGroupConfig);
   free(resp.du_to_cu_rrc_information);
 }
-
+// Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 4.X (DO REQUEST FUNC)
+// Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5 (DO REQUEST FUNC)
+/**
+ * # Why call modification instead of setup? 
+ * ```
+ * Reg process has already Init the ue context,
+ * so here we need to call THIS FUNC
+ * ```
+*/
 void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
 {
   gNB_MAC_INST *mac = RC.nrmac[0];
@@ -184,6 +192,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
 
   if (req->srbs_to_be_setup_length > 0) {
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5.1 (GNB RRC SRB SETUP)
     resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
@@ -192,6 +201,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->drbs_to_be_setup_length > 0) {
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5.2 (GNB RRC DRB SETUP)
     resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->gNB_DU_ue_id,
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
@@ -207,6 +217,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
           "RRC reconfiguration outcome unsuccessful, but no rollback mechanism implemented to come back to old configuration\n");
   }
 
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5.3 (GNB UPDATE CELL_GROUP ACCORDING TO S/DRB TO_ADD_MOD_LIST)
   if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0) {
     /* TODO: if we change e.g. BWP or MCS table, need to automatically call
      * configure_UE_BWP() (form nr_mac_update_timers()) after some time? */
@@ -232,7 +243,8 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   DevAssert(resp.cu_to_du_rrc_information == NULL);
   // resp.du_to_cu_rrc_information can be either NULL or not
   DevAssert(resp.rrc_container == NULL && resp.rrc_container_length == 0);
-
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5.4 (GNB DU TELL CU MODIFY COMPLETE)
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 5.X (GNB DU TELL CU MODIFY COMPLETE FUNC PTR)
   mac->mac_rrc.ue_context_modification_response(req, &resp);
 
   /* free the memory we allocated above */
