@@ -2607,6 +2607,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case NGAP_PDUSESSION_SETUP_REQ:
+        // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 1 (GNB NGAP RECV PDUSESSION_SETUP_REQ)
         rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(msg_p, instance);
         break;
 
