@@ -123,6 +123,7 @@ NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
   if (ue->nb_of_pdusessions == 0)
     return NULL;
   int nb_drb_to_setup = rrc->configuration.drbs;
+  // int nb_drb_to_setup = ue->pduSession[i].param.nb_qos;
   long drb_priority[MAX_DRBS_PER_UE] = {0};
   uint8_t drb_id_to_setup_start = 0;
   NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
@@ -701,6 +702,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
   }
 }
 
+    // Dongdong_NGAP_PDUSESSION_MODIFY_REQ STEP 3 (DO RRC_RECONFIG) 
 //-----------------------------------------------------------------------------
 void
 rrc_gNB_modify_dedicatedRRCReconfiguration(
@@ -2618,6 +2620,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case NGAP_PDUSESSION_MODIFY_REQ:
+        // Dongdong_NGAP_PDUSESSION_MODIFY_REQ STEP 1 (GNB NGAP RECV NGAP_PDUSESSION_MODIFY_REQ) 
         rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(msg_p, instance);
         break;
 

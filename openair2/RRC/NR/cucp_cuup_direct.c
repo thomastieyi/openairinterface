@@ -181,6 +181,21 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
     }
   }
 
+  resp.numPDUSessions = req->numPDUSessionsMod;
+  for (int i = 0; i < resp.numPDUSessions; ++i) {
+    resp.pduSession[i].numDRBSetup = req->pduSession[i].numDRB2Modify;
+    for (int j = 0; j < req->pduSession[i].numDRB2Modify; j++) {
+      DRB_nGRAN_to_setup_t *req_drb = req->pduSession[i].DRBnGRanModList + j;
+      DRB_nGRAN_setup_t *resp_drb = resp.pduSession[i].DRBnGRanList + j;
+      resp_drb->id = req_drb->id;
+      resp_drb->numQosFlowSetup = req_drb->numQosFlow2Setup;
+      for (int k = 0; k < resp_drb->numQosFlowSetup; k++)
+        resp_drb->qosFlows[k].id = req_drb->qosFlows[k].id;
+    }
+  }
+
+  
+
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   // GTP tunnel for UL
   // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.1 (GET NR_DRB_ToAddModList_t ACCORDING TO RRC UE CONTEXT / MODIFIED IN STEP 2.2 )

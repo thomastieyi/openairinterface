@@ -913,6 +913,7 @@ static void decodePDUSessionResourceModify(pdusession_t *param, const ngap_pdu_t
     ASN_STRUCT_FREE(asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer,pdusessionTransfer );
 }
 
+// Dongdong_NGAP_PDUSESSION_MODIFY_REQ STEP 2 (GNB NGAP RECV PDUSESSION_MODIFYP_REQ) 
 //------------------------------------------------------------------------------
 int rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(MessageDef *msg_p, instance_t instance)
 //------------------------------------------------------------------------------
@@ -928,17 +929,20 @@ int rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(MessageDef *msg_p, instance_t ins
     // TO implement return setup failed
     return (-1);
   }
-  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+  gNB_RRC_UE_t *UE = &ue_context_p->ue_context; // Dongdong_MODIFY
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0);
   ctxt.eNB_index = 0;
   bool all_failed = true;
+  
+  e1ap_bearer_setup_req_t bearer_req = {0};     //准备修改gNB中相关的上下文，通过F1AP修改
+
   for (int i = 0; i < req->nb_pdusessions_tomodify; i++) {
     rrc_pdu_session_param_t *sess;
     const pdusession_t *sessMod = req->pdusession_modify_params + i;
     for (sess = UE->pduSession; sess < UE->pduSession + UE->nb_of_pdusessions; sess++)
       if (sess->param.pdusession_id == sessMod->pdusession_id)
-        break;
-    if (sess == UE->pduSession + UE->nb_of_pdusessions) {
+        break; //Find requested pdu 
+    if (sess == UE->pduSession + UE->nb_of_pdusessions) { //Error
       LOG_W(NR_RRC, "Requested modification of non-existing PDU session, refusing modification\n");
       UE->nb_of_pdusessions++;
       sess->status = PDU_SESSION_STATUS_FAILED;
@@ -947,25 +951,76 @@ int rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(MessageDef *msg_p, instance_t ins
       UE->pduSession[i].cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
     } else {
       all_failed = false;
-      sess->status = PDU_SESSION_STATUS_NEW;
-      sess->param.pdusession_id = sessMod->pdusession_id;
-      sess->cause = NGAP_CAUSE_RADIO_NETWORK;
-      sess->cause_value = NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances;
-      sess->status = PDU_SESSION_STATUS_NEW;
+      sess->status = PDU_SESSION_STATUS_TOMODIFY;
+      // sess->param.pdusession_id = sessMod->pdusession_id;
+      // sess->cause = NGAP_CAUSE_RADIO_NETWORK;
+      // sess->cause_value = NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances;
+      // sess->status = PDU_SESSION_STATUS_NEW;
       sess->param.pdusession_id = sessMod->pdusession_id;
       sess->cause = NGAP_CAUSE_NOTHING;
       if (sessMod->nas_pdu.buffer != NULL) {
         UE->pduSession[i].param.nas_pdu = sessMod->nas_pdu;
       }
+      if (sessMod->pdusessionTransfer.buffer != NULL) {
+        UE->pduSession[i].param.pdusessionTransfer = sessMod->pdusessionTransfer;
+      }
       // Save new pdu session parameters, qos, upf addr, teid
+      // Dongdong_NGAP_PDUSESSION_MODIFY_REQ STEP 2.1 (DECODE PDU_SESSION MODIFY), Change RRC UE PDU Session
       decodePDUSessionResourceModify(&sess->param, UE->pduSession[i].param.pdusessionTransfer);
+      pdu_session_to_setup_t *gnb_pdu_to_mod = bearer_req.pduSessionMod + bearer_req.numPDUSessionsMod;
+      bearer_req.numPDUSessionsMod++;
+      gnb_pdu_to_mod->sessionId = sess->param.pdusession_id;
+      // gnb_pdu_to_mod->sst = msg->allowed_nssai[i].sST;
+      // gnb_pdu_to_mod->integrityProtectionIndication = rrc->security.do_drb_integrity ? E1AP_IntegrityProtectionIndication_required : E1AP_IntegrityProtectionIndication_not_needed;
+      gnb_pdu_to_mod->teId = sess->param.gtp_teid;
+      memcpy(&gnb_pdu_to_mod->tlAddress, sess->param.upf_addr.buffer, 4); // Fixme: dirty IPv4 target
+      gnb_pdu_to_mod->numDRB2Modify = sess->param.nb_qos; // One DRB per PDU Session. TODO: Remove hardcoding
+      //NGAP_ProtocolIE_ID_id_QosFlowAddOrModifyRequestList
+      for (int j=0; j < gnb_pdu_to_mod->numDRB2Modify; j++) {
+        DRB_nGRAN_to_setup_t *drb = gnb_pdu_to_mod->DRBnGRanModList + j;
+        drb->id = next_available_drb(UE, &UE->pduSession[i], GBR_FLOW);
+        drb->defaultDRB = E1AP_DefaultDRB_true;
+
+      // drb->sDAP_Header_UL = !(rrc->configuration.enable_sdap);
+      // drb->sDAP_Header_DL = !(rrc->configuration.enable_sdap);
+
+      drb->pDCP_SN_Size_UL = E1AP_PDCP_SN_Size_s_18;
+      drb->pDCP_SN_Size_DL = E1AP_PDCP_SN_Size_s_18;
+
+      drb->discardTimer = E1AP_DiscardTimer_infinity;
+      drb->reorderingTimer = E1AP_T_Reordering_ms0;
+
+      drb->rLC_Mode = E1AP_RLC_Mode_rlc_am;
+
+      drb->numCellGroups = 1; // assume one cell group associated with a DRB
+
+      for (int k=0; k < drb->numCellGroups; k++) {
+        cell_group_t *cellGroup = drb->cellGroupList + k;
+        cellGroup->id = 0; // MCG
+      }
+      drb->numQosFlow2Setup = sess->param.nb_qos;
+        for (int k=0; k < drb->numQosFlow2Setup; k++) {
+          qos_flow_to_setup_t *qos = drb->qosFlows + k;
+
+          qos->id = sess->param.qos[k].qfi;
+          qos->fiveQI = sess->param.qos[k].fiveQI;
+          qos->fiveQI_type = sess->param.qos[k].fiveQI_type;
+
+          qos->qoSPriorityLevel = sess->param.qos[k].allocation_retention_priority.priority_level;
+          qos->pre_emptionCapability = sess->param.qos[k].allocation_retention_priority.pre_emp_capability;
+          qos->pre_emptionVulnerability = sess->param.qos[k].allocation_retention_priority.pre_emp_vulnerability;
+        }
+      }
       sess->param.UPF_addr_N3 = sessMod->upf_addr;
       sess->param.UPF_teid_N3 = sessMod->gtp_teid;
     }
   }
-
+  int xid = rrc_gNB_get_next_transaction_identifier(instance);
+  UE->xids[xid] = RRC_PDUSESSION_MODIFY;
+  RC.nrrrc[instance]->cucp_cuup.bearer_context_setup(&bearer_req, instance);
   if (!all_failed) {
     LOG_D(NR_RRC, "generate RRCReconfiguration \n");
+    // Dongdong_NGAP_PDUSESSION_MODIFY_REQ STEP 2.X (DO RRC_RECONFIG) 
     rrc_gNB_modify_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
   } else {
     LOG_I(NR_RRC,
