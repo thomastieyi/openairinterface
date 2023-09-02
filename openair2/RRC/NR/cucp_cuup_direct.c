@@ -183,7 +183,7 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   // GTP tunnel for UL
-  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.1 (GET NR_DRB_ToAddModList_t ACCORDING TO UE CONTEXT)
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.1 (GET NR_DRB_ToAddModList_t ACCORDING TO RRC UE CONTEXT / MODIFIED IN STEP 2.2 )
   NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(UE);
   int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, DRB_configList, rrc->e1_inst);
   if (ret < 0) AssertFatal(false, "Unable to configure DRB or to create GTP Tunnel\n");
@@ -219,5 +219,6 @@ static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const r
 void cucp_cuup_message_transfer_direct_init(gNB_RRC_INST *rrc) {
   // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.X (PTR POINT THIS FUNC)
   rrc->cucp_cuup.bearer_context_setup = cucp_cuup_bearer_context_setup_direct;
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 7.1.X (PTR POINT THIS FUNC)
   rrc->cucp_cuup.bearer_context_mod = cucp_cuup_bearer_context_mod_direct;
 }

@@ -110,9 +110,13 @@ static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
 
 mui_t rrc_gNB_mui = 0;
 
-///---------------------------------------------------------------------------------------------------------------///
-///---------------------------------------------------------------------------------------------------------------///
 
+///---------------------------------------------------------------------------------------------------------------///
+///---------------------------------------------------------------------------------------------------------------///
+/**
+ * @param INPUT   gNB_RRC_UE_t *ue        // 之前在 REQ STEP 2.2 中进行过赋值的RRC UE上下文
+ * @param OUTPUT  NR_DRB_ToAddModList_t   // 获取填入RRC RECONFIGURATION的配置
+*/
 NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -590,7 +594,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
   }
 }
-
+// Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 8 (GNB RRC DO RRC RECONFIGURATION FUNC)
 //-----------------------------------------------------------------------------
 void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP)
 //-----------------------------------------------------------------------------
@@ -652,7 +656,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
   NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
-
+// Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 9 ENDING (GNB RRC REALLY DO RRC RECONFIGURATION FUNC)
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
                                    RRC_BUF_SIZE,
@@ -2084,6 +2088,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
 
     // send the F1 response message up to update F1-U tunnel info
     // it seems the rrc transaction id (xid) is not needed here
+    // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 7.1 (GNB RRC BEARER CTX MODIFY PTR)
     rrc->cucp_cuup.bearer_context_mod(&req, instance);
   }
 
@@ -2103,6 +2108,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
     }
     UE->masterCellGroup = cellGroupConfig;
 
+    // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 7.X (GNB RRC DO RRC RECONFIGURATION)
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
   }
 }
@@ -2348,7 +2354,7 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
 
   return 0;
 }
-
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 3.X (F1AP DO SEND MODIFY FROM CU TO DU)
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p, e1ap_bearer_setup_resp_t *e1ap_resp)
 {
   /* Generate a UE context modification request message towards the DU to
@@ -2635,6 +2641,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_RESP:
+        // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 7 (GNB RRC TASK RECV UE CTX MOD)
         rrc_CU_process_ue_context_modification_response(msg_p, instance);
         break;
 

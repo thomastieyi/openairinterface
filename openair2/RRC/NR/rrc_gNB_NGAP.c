@@ -760,7 +760,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     session->pdu_session_type = msg->pdusession_setup_params[i].pdu_session_type;
     session->nas_pdu = msg->pdusession_setup_params[i].nas_pdu;
     session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
-  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.2 (decodePDUSessionResourceSetup)
+  // Dongdong_NGAP_PDUSESSION_SETUP_REQ STEP 2.2 (DECODE PDU_SESSION_SETP / RRC_UE_CONTEXT MODIFY)
     decodePDUSessionResourceSetup(session);
     bearer_req.gNB_cu_cp_ue_id = msg->gNB_ue_ngap_id;
     bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
